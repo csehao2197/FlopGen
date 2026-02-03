@@ -15,30 +15,38 @@ def apply_suit_perm(card, perm):
     rank, suit = card[0], card[1]
     return rank + perm[suit]
 
-def canonical_flop(flop):
-    """
-    Given a 3-card flop (iterable of 'Rs' strings), return its canonical
-    representative under all suit permutations and card reorderings.
-    """
-    # All permutations of suits (4! = 24)
-    suit_perms = []
-    for perm_suits in itertools.permutations(SUITS):
-        perm_map = dict(zip(SUITS, perm_suits))
-        suit_perms.append(perm_map)
+def canonical_suits(suits):
+    suit_order = {}
+    suit_index = 0
+    for s in suits:
+        if s not in suit_order:
+           suit_order[s] = SUITS[suit_index]
+           suit_index += 1
+    for s in SUITS:
+        if s not in suit_order:
+            suit_order[s] = SUITS[suit_index]
+            suit_index += 1
+    # """Map suits to a canonical order: s -> s, h -> h, d -> d, c -> c"""
+    # suit_order = {'s': 's', 'h': 'h', 'd': 'd', 'c': 'c'}
+    suits_mapped = [suit_order[s] for s in suits]
+    return suits_mapped
 
-    reps = []
-    for perm in suit_perms:
-        # Apply suit permutation
-        permuted = [apply_suit_perm(c, perm) for c in flop]
-        # Sort cards in a consistent way: by rank index, then suit index
-        permuted_sorted = sorted(
-            permuted,
-            key=lambda c: (RANKS.index(c[0]), SUITS.index(c[1]))
-        )
-        reps.append("".join(permuted_sorted))
-
-    # Canonical representative is lexicographically smallest representation
-    return min(reps)
+def canonical_flops(rank):
+    ret = []
+    # sss ssh shs shh shd 
+    list_of_perms = ['sss', 'ssh', 'shs', 'shh', 'shd']
+    
+    for perm in list_of_perms:
+        flop = zip(rank, perm)
+        flop_cards = [r + s for r, s in flop]
+        card_dups = len(set(flop_cards)) < 3
+        if card_dups:
+            continue
+        ret.append("".join(flop_cards)) 
+    if(len(ret) == 3):
+        # AAB
+        ret = [ret[0], ret[2]]
+    return ret
 
 def main():
     parser = argparse.ArgumentParser(description="gen.py argment")
@@ -48,27 +56,27 @@ def main():
     args = parser.parse_args()
     print("input:", args.input)
 
-    unique_flops = set()
+    total_rank_list = []
+    for rank in itertools.combinations_with_replacement(RANKS, 3):
+        total_rank_list.append(rank)
+    
+    canonical_flop_list = []
+    for rank in total_rank_list:
+        flops = canonical_flops(rank)
+        canonical_flop_list.append(flops)
 
-    # Generate all unordered 3-card combinations from the 52-card deck
-    for flop in itertools.combinations(CARDS, 3):
-        key = canonical_flop(flop)
-        unique_flops.add(key)
+    print(f"Number of total rank combinations: {len(total_rank_list)}")
+    print(f"Number of total canonical_flop_list: {len(canonical_flop_list)}")
 
-    # We expect 1755 unique canonical flops
-    print(f"Number of canonical flops: {len(unique_flops)}")
-
-    # Sort them lexicographically for stable output
-    #sorted_flops = sorted(unique_flops)
-    sorted_flops = unique_flops
-
+    ret = list(itertools.chain(*canonical_flop_list))
+    print(f"Number of total canonical flops: {len(ret)}")
+    
+    res = map("".join, ret)
+    
     # Write to file, one flop per line
     with open("flops_1755.txt", "w") as f:
-        for rep in sorted_flops:
-            # rep is like '2s3h4d' (three cards concatenated)
-            # Optionally insert spaces between cards for readability
-            cards = [rep[i:i+2] for i in range(0, 6, 2)]
-            f.write("".join(cards) + "\n")
-
+        for rep in res:
+            f.write(rep + "\n")
+            
 if __name__ == "__main__":
     main()
