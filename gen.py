@@ -1,3 +1,5 @@
+import os
+
 import itertools
 import argparse
 
@@ -74,7 +76,8 @@ def main():
     res = map("".join, ret)
     
     # Write to file, one flop per line
-    with open("flopos\flops_1755.txt", "w") as f:
+    os.makedirs("flops", exist_ok=True)
+    with open("flops\\flops_1755.txt", "w") as f:
         for rep in res:
             f.write(rep + "\n")
             
