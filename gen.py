@@ -33,22 +33,81 @@ def canonical_suits(suits):
     suits_mapped = [suit_order[s] for s in suits]
     return suits_mapped
 
-def canonical_flops(rank):
-    ret = []
-    # sss ssh shs shh shd 
-    list_of_perms = ['sss', 'ssh', 'shs', 'shh', 'shd']
+class Card:
+
+    rank = ''
+    suit = ''
+
+    def __init__(self, rank, suit):
+        self.rank = rank
+        self.suit = suit
+
     
-    for perm in list_of_perms:
-        flop = zip(rank, perm)
-        flop_cards = [r + s for r, s in flop]
-        card_dups = len(set(flop_cards)) < 3
-        if card_dups:
+    def __eq__(self, other):
+        if not isinstance(other, Card):
+            return NotImplemented
+        return self.rank == other.rank and self.suit == other.suit
+    def __str__(self):        
+        return self.rank + self.suit
+
+# Input
+# Card Input Are Rank Sorted
+def canonical_equivalent(cardSeqL, cardSeqR):
+    # Collect All suit in card SeqL
+    
+    canonicalSeqL = []
+    for suit in SUITS:
+        canonicalSeqL.append('')
+
+    for card in cardSeqL:
+        canonicalSeqL[SUITS.index(card.suit)] += card.rank
+
+    canonicalSeqL.sort()
+
+    canonicalSeqR = []
+    for suit in SUITS:
+        canonicalSeqR.append('')
+
+    for card in cardSeqR:
+        canonicalSeqR[SUITS.index(card.suit)] += card.rank
+    
+    canonicalSeqR.sort()
+    
+    if canonicalSeqL == canonicalSeqR:
+        return True
+    else:
+        return False
+
+def sub(rank, rankIdx, cardSeqs, list_of_cardSeqs):
+    if rankIdx == len(rank):
+        for cardSeq in list_of_cardSeqs:
+            if canonical_equivalent(cardSeqs, cardSeq):
+                return
+        list_of_cardSeqs.append(cardSeqs)
+        return
+    for suit in SUITS:
+        card = Card(rank[rankIdx], suit)
+        if card in cardSeqs:
             continue
-        ret.append("".join(flop_cards)) 
-    if(len(ret) == 3):
-        # AAB
-        ret = [ret[0], ret[2]]
-    return ret
+        else:
+            sub(rank, rankIdx + 1, cardSeqs + [card], list_of_cardSeqs)
+    return
+
+# Rank is unique
+# Given a rank combination, generate all possible suit combinations and apply 
+# canonical_suits to get the canonical flop representation
+# For example, for rank combination (A, A, K), we generate all suit combinations:
+# AAA: sss, ssh, shs, shh, shd, ssd
+# In the order of 'shcd'
+
+# Canonic rule. 
+#   The first card is always spade. Because of the rank uniqueness, we can always assign the first card to spade.
+#    The second card is always heart. Because of the rank uniqueness, we can always assign the second card to heart.
+def canonical_flops(rank):
+    list_of_cardSeqs = []
+    sub(rank, 0, [], list_of_cardSeqs)
+
+    return list_of_cardSeqs
 
 def main():
     parser = argparse.ArgumentParser(description="gen.py argment")
@@ -66,20 +125,25 @@ def main():
     for rank in total_rank_list:
         flops = canonical_flops(rank)
         canonical_flop_list.append(flops)
-
-    print(f"Number of total rank combinations: {len(total_rank_list)}")
-    print(f"Number of total canonical_flop_list: {len(canonical_flop_list)}")
-
-    ret = list(itertools.chain(*canonical_flop_list))
-    print(f"Number of total canonical flops: {len(ret)}")
     
-    res = map("".join, ret)
+    res = ''
+    for flopList in canonical_flop_list:
+        for flop in flopList:
+            for card in flop:
+                res += str(card)
+            res += "\n"
     
+    s = ''
+    with open("1755CanonicFlops.txt", "r", encoding="utf-8") as f:
+        s = f.read()
+
+    if(s != res):
+        print("Error: Generated flops do not match the expected flops.")
+
     # Write to file, one flop per line
     os.makedirs("flops", exist_ok=True)
     with open("flops\\flops_1755.txt", "w") as f:
-        for rep in res:
-            f.write(rep + "\n")
+        f.write(res)
             
 if __name__ == "__main__":
     main()
