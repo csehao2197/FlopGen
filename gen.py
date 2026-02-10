@@ -12,29 +12,7 @@ def all_cards():
 
 CARDS = all_cards()
 
-def apply_suit_perm(card, perm):
-    """Apply a suit permutation (dict) to a single card."""
-    rank, suit = card[0], card[1]
-    return rank + perm[suit]
-
-def canonical_suits(suits):
-    suit_order = {}
-    suit_index = 0
-    for s in suits:
-        if s not in suit_order:
-           suit_order[s] = SUITS[suit_index]
-           suit_index += 1
-    for s in SUITS:
-        if s not in suit_order:
-            suit_order[s] = SUITS[suit_index]
-            suit_index += 1
-    # """Map suits to a canonical order: s -> s, h -> h, d -> d, c -> c"""
-    # suit_order = {'s': 's', 'h': 'h', 'd': 'd', 'c': 'c'}
-    suits_mapped = [suit_order[s] for s in suits]
-    return suits_mapped
-
 class Card:
-
     rank = ''
     suit = ''
 
@@ -139,7 +117,9 @@ def main():
 
     if(s != res):
         print("Error: Generated flops do not match the expected flops.")
-
+    else:
+        print("Success: Generated flops match the expected flops.")
+        
     # Write to file, one flop per line
     os.makedirs("flops", exist_ok=True)
     with open("flops\\flops_1755.txt", "w") as f:
